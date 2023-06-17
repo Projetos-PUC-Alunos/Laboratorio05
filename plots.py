@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.stats import spearmanr
+from scipy.stats import mannwhitneyu
 
 # Ler o arquivo CSV
 data = pd.read_csv('out/results.csv')
@@ -8,9 +8,6 @@ data = pd.read_csv('out/results.csv')
 # Filtrar os dados para cada tipo
 data_graphql = data[data['api'] == 'graphql']
 data_rest = data[data['api'] == 'rest']
-
-# Calcular o coeficiente de correlação de Spearman
-correlation, _ = spearmanr(data_graphql['elapsed_time'], data_rest['elapsed_time'])
 
 # Criar uma lista de dados para o boxplot
 data_list = [data_graphql['elapsed_time'], data_rest['elapsed_time']]
@@ -29,13 +26,22 @@ median_rest = data_rest['elapsed_time'].median()
 ax.axhline(y=median_graphql, color='red', linestyle='--', label=f'Mediana - GraphQL: {median_graphql:.2f}')
 ax.axhline(y=median_rest, color='blue', linestyle='--', label=f'Mediana - REST: {median_rest:.2f}')
 
+# Realizar o teste de Mann-Whitney
+statistic, p_value = mannwhitneyu(data_graphql['elapsed_time'], data_rest['elapsed_time'])
+alpha = 0.05
+
+# Adicionar o resultado do teste de Mann-Whitney no gráfico
+if p_value < alpha:
+    ax.text(0.5, 0.05, f'Teste de Mann-Whitney: p-value = {p_value:.4f} (diferentes)', transform=ax.transAxes,
+            fontsize=10, verticalalignment='bottom', horizontalalignment='center', bbox=dict(facecolor='red', alpha=0.5))
+else:
+    ax.text(0.5, 0.05, f'Teste de Mann-Whitney: p-value = {p_value:.4f} (sem diferença)', transform=ax.transAxes,
+            fontsize=10, verticalalignment='bottom', horizontalalignment='center', bbox=dict(facecolor='green', alpha=0.5))
+
 # Adicionar título e rótulos aos eixos
 ax.set_title('Boxplot - elapsed_time')
 ax.set_xlabel('Type')
-ax.set_ylabel('Elapsed Time')
-
-# Mostrar o coeficiente de correlação de Spearman
-ax.text(0.5, 0.05, f'Coeficiente de Spearman: {correlation:.2f}', transform=ax.transAxes, ha='center')
+ax.set_ylabel('Body Size')
 
 # Mostrar a legenda
 ax.legend()
